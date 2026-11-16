@@ -180,7 +180,7 @@ td .file { display: block; font: 12px ui-monospace, Consolas, monospace; color: 
 <body>
 <header class="top">
   <h1>Driftwood Isle: audio demo for a cozy merge game</h1>
-  <p><span class="by">Alexey Nagrani, sound designer.</span> 
+  <p class="by">Alexey Nagrani, sound designer</p>
   <p>A complete sound set for a cozy island merge game: UI and item sounds, merges that grow with tier, a combo ladder, rewards, a level-up stinger and a seamless music loop. Designed, produced and mixed in FL Studio. Play the game to hear every sound in context, or audition each file in the sound list. Original concept for portfolio purposes, not affiliated with any studio.</p>
 </header>
 
@@ -382,7 +382,7 @@ td .file { display: block; font: 12px ui-monospace, Consolas, monospace; color: 
   const grid = Array(W * H).fill(0);
   [0, 1, 1, 2, 0, 1, 0, 0, 2, 1, 0, 1, 0, 0, 0, 2, 0, 1, 0, 0, 0, 0, 1, 0, 0].forEach((v, i) => grid[i] = v);
   let sel = -1, coins = 20, xp = 0, lvl = 1;
-  const XP_NEED = 6;
+  const XP_NEED = 12;
   const board = document.getElementById("board");
   const phone = document.getElementById("phone");
 
