@@ -45,6 +45,26 @@ main {
   display: grid; grid-template-columns: minmax(300px, 380px) 1fr; gap: 28px; align-items: start;
 }
 @media (max-width: 820px) { main { grid-template-columns: 1fr; } }
+button, .cell { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+@media (max-width: 520px) {
+  header.top { padding: 18px 14px 4px; }
+  header.top p { font-size: 15px; }
+  main { padding: 10px 12px 32px; gap: 18px; }
+  .phone { border-width: 4px; border-radius: 26px; padding: 10px; gap: 10px; }
+  .start { border-radius: 22px; }
+  .board { gap: 5px; padding: 6px; }
+  .gbtn { padding: 12px 4px; font-size: 15px; }
+  .card { padding: 14px 14px; }
+  .specs li { font-size: 13px; }
+  /* sound list: stacked rows instead of a three-column table */
+  thead { display: none; }
+  table, tbody, tr, td { display: block; width: 100%; }
+  tr { padding: 12px 0; border-bottom: 1px solid var(--line); }
+  td { border: 0; padding: 2px 0; }
+  td.num { padding-top: 6px; }
+  .play { height: 40px; min-width: 44px; font-size: 14px; }
+  .plays { gap: 8px; margin-top: 6px; }
+}
 
 /* ---------- phone / game ---------- */
 .phone {
@@ -126,6 +146,7 @@ main {
 .deco { width: 40px; height: 36px; opacity: .25; filter: grayscale(1); transition: opacity .3s ease, filter .3s ease; }
 .deco.built { opacity: 1; filter: none; animation: pop .45s ease; }
 .gbtn[disabled] { background: var(--palm); color: #fff; cursor: default; box-shadow: none; }
+.sheet .gbtn { white-space: nowrap; padding-left: 12px; padding-right: 12px; }
 .sheet .note { font-size: 13px; color: var(--muted); margin: 0; }
 .hint b { color: var(--ink); }
 
@@ -159,7 +180,8 @@ td .file { display: block; font: 12px ui-monospace, Consolas, monospace; color: 
 <body>
 <header class="top">
   <h1>Driftwood Isle: audio demo for a cozy merge game</h1>
-  <p><span class="by">Alexey Nagrani, sound designer.</span> A complete sound set for a cozy island merge game: UI and item sounds, merges that grow with tier, a combo ladder, rewards, a level-up stinger and a seamless music loop. Designed, produced and mixed in FL Studio. Play the game on the left to hear every sound in context, or audition the files on the right. Original concept for portfolio purposes, not affiliated with any studio.</p>
+  <p><span class="by">Alexey Nagrani, sound designer.</span> 
+  <p>A complete sound set for a cozy island merge game: UI and item sounds, merges that grow with tier, a combo ladder, rewards, a level-up stinger and a seamless music loop. Designed, produced and mixed in FL Studio. Play the game to hear every sound in context, or audition each file in the sound list. Original concept for portfolio purposes, not affiliated with any studio.</p>
 </header>
 
 <main>
@@ -233,7 +255,7 @@ td .file { display: block; font: 12px ui-monospace, Consolas, monospace; color: 
     { key: "ui_panel_close", name: "Panel close", desc: "Shop panel slides out", files: 0, lufs: -25 },
     { key: "ui_error_soft", name: "Not allowed", desc: "Low muted double knock; never harsh", files: 3, lufs: -26 },
     { key: "item_pickup", name: "Item pick up", desc: "Item lifts off the board", files: 3, lufs: -26 },
-    { key: "item_drop", name: "Item drop", desc: "Item lands on a tile", files: 3, lufs: -26 },
+    { key: "item_drop", name: "Item drop", desc: "Item lands on a tile", files: 3, lufs: -35 },
     { key: "merge_tier1", name: "Merge, tier 1", desc: "Seed + seed = sprout", files: 3, lufs: -23 },
     { key: "merge_tier2", name: "Merge, tier 2", desc: "Sprout + sprout = palm", files: 3, lufs: -21 },
     { key: "merge_tier3", name: "Merge, tier 3", desc: "Palm + palm: the biggest merge, coins follow", files: 3, lufs: -19 },
@@ -256,7 +278,11 @@ td .file { display: block; font: 12px ui-monospace, Consolas, monospace; color: 
     ctx = new AC();
     sfxBus = ctx.createGain(); sfxBus.gain.value = 1; sfxBus.connect(ctx.destination);
     musBus = ctx.createGain(); musBus.gain.value = 0.9; musBus.connect(ctx.destination);
+    try { if (navigator.audioSession) navigator.audioSession.type = "playback"; } catch (e) {}
     const jobs = [];
+    let total = 0, done = 0;
+    const startBtn = document.getElementById("startBtn");
+    const tick = () => { done++; startBtn.textContent = done < total ? `Loading sounds… ${done}/${total}` : "Tap to start with sound"; };
     for (const s of LIST) {
       const n = s.files || 1;
       for (let i = 1; i <= n; i++) {
@@ -264,7 +290,8 @@ td .file { display: block; font: 12px ui-monospace, Consolas, monospace; color: 
         jobs.push(fetch(url).then(r => r.arrayBuffer())
           .then(b => new Promise((res, rej) => ctx.decodeAudioData(b, res, rej)))
           .then(buf => { (buffers[s.key] ||= [])[i - 1] = buf; })
-          .catch(() => {}));
+          .catch(() => {}).finally(tick));
+        total++;
       }
     }
     return Promise.all(jobs).then(() => { loaded = true; });
