@@ -80,7 +80,7 @@ main {
 .cell.sel svg { transform: translateY(-4px) scale(1.08); }
 .cell.pop svg { animation: pop .35s ease; }
 @keyframes pop { 0% { transform: scale(.4); } 70% { transform: scale(1.18); } 100% { transform: scale(1); } }
-.cell.shake { animation: shake .25s ease; }
+.cell.shake, .gbtn.shake { animation: shake .25s ease; }
 @keyframes shake { 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
 .bar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .gbtn {
@@ -121,6 +121,12 @@ main {
 .start button { font: 600 20px var(--display); padding: 14px 26px; }
 .start[hidden] { display: none; }
 .hint { color: var(--muted); font-size: 14px; margin: 10px 4px 0; }
+.isle { display: flex; gap: 8px; align-items: center; background: rgba(253,248,236,.25); border-radius: 14px; padding: 4px 10px; min-height: 44px; }
+.isle .lbl { font: 600 13px var(--display); color: var(--foam); margin-right: auto; }
+.deco { width: 40px; height: 36px; opacity: .25; filter: grayscale(1); transition: opacity .3s ease, filter .3s ease; }
+.deco.built { opacity: 1; filter: none; animation: pop .45s ease; }
+.gbtn[disabled] { background: var(--palm); color: #fff; cursor: default; box-shadow: none; }
+.sheet .note { font-size: 13px; color: var(--muted); margin: 0; }
 .hint b { color: var(--ink); }
 
 /* ---------- sound sheet ---------- */
@@ -164,6 +170,11 @@ td .file { display: block; font: 12px ui-monospace, Consolas, monospace; color: 
         <div class="xp" aria-label="Level progress"><i id="xp"></i></div>
         <div class="pill"><span class="ico coin" aria-hidden="true">$</span><span id="coins">20</span></div>
       </div>
+      <div class="isle" aria-label="Your island">
+        <span class="lbl">Your island</span>
+        <svg class="deco" id="decoHammock" viewBox="0 0 40 36" aria-label="Hammock"><path d="M6 34 V8" stroke="#8a5a2b" stroke-width="3" stroke-linecap="round"/><path d="M34 34 V8" stroke="#8a5a2b" stroke-width="3" stroke-linecap="round"/><path d="M6 6 C2 3 1 6 0 8 M6 6 C10 2 12 4 13 6" stroke="#4c8a4f" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M34 6 C30 2 28 4 27 6 M34 6 C38 3 39 6 40 8" stroke="#4c8a4f" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M6 14 C14 26 26 26 34 14" stroke="#e2704f" stroke-width="4" fill="none" stroke-linecap="round"/></svg>
+        <svg class="deco" id="decoLantern" viewBox="0 0 40 36" aria-label="Lantern"><path d="M20 35 V12" stroke="#5a4636" stroke-width="3" stroke-linecap="round"/><path d="M14 35 H26" stroke="#5a4636" stroke-width="3" stroke-linecap="round"/><circle cx="20" cy="9" r="9" fill="#f6d36b" opacity=".45"/><rect x="15" y="3" width="10" height="12" rx="3" fill="#e8b23a" stroke="#5a4636" stroke-width="2"/></svg>
+      </div>
       <div class="board" id="board" role="grid" aria-label="Merge board"></div>
       <div class="bar">
         <button class="gbtn primary" id="spawn" type="button">Collect</button>
@@ -175,6 +186,7 @@ td .file { display: block; font: 12px ui-monospace, Consolas, monospace; color: 
         <div class="row"><h3>Island shop</h3><button class="gbtn" id="closeShop" type="button">Close</button></div>
         <div class="row"><span>Hammock between the palms</span><button class="gbtn primary" id="buy" type="button">Build · 15</button></div>
         <div class="row"><span>Lantern on the pier</span><button class="gbtn primary" id="buy2" type="button">Build · 25</button></div>
+        <p class="note">Earn coins by merging two palms (+10 each).</p>
       </div>
       <div class="banner" id="banner"><span>Level up!</span></div>
       <div class="start" id="start"><button class="gbtn primary" id="startBtn" type="button">Tap to start with sound</button></div>
@@ -216,7 +228,7 @@ td .file { display: block; font: 12px ui-monospace, Consolas, monospace; color: 
 (() => {
   // ---------- sound catalogue ----------
   const LIST = [
-    { key: "ui_tap", name: "UI tap", desc: "Marimba tick with a wooden edge", files: 3, lufs: -26 },
+    { key: "ui_tap", name: "UI tap", desc: "Buttons and empty tiles", files: 3, lufs: -26 },
     { key: "ui_panel_open", name: "Panel open", desc: "Shop panel slides in", files: 0, lufs: -25 },
     { key: "ui_panel_close", name: "Panel close", desc: "Shop panel slides out", files: 0, lufs: -25 },
     { key: "ui_error_soft", name: "Not allowed", desc: "Low muted double knock; never harsh", files: 3, lufs: -26 },
@@ -440,12 +452,21 @@ td .file { display: block; font: 12px ui-monospace, Consolas, monospace; color: 
   const shop = document.getElementById("shop");
   document.getElementById("shopBtn").addEventListener("click", () => { unlock(); shop.classList.add("open"); play("ui_panel_open"); });
   document.getElementById("closeShop").addEventListener("click", () => { shop.classList.remove("open"); play("ui_panel_close"); });
-  function buy(cost, btn) {
-    if (coins < cost) { play("ui_error_soft"); return; }
+  function buy(cost, btn, decoId) {
+    if (btn.disabled) return;
+    if (coins < cost) {
+      play("ui_error_soft");
+      btn.classList.remove("shake"); void btn.offsetWidth; btn.classList.add("shake");
+      floatText(btn, "Need " + (cost - coins) + " more");
+      return;
+    }
     coins -= cost; play("build_place"); render(); floatText(btn, "Built!"); gainXp(2);
+    btn.disabled = true; btn.textContent = "Built ✓";
+    document.getElementById(decoId).classList.add("built");
+    setTimeout(() => { if (shop.classList.contains("open")) { shop.classList.remove("open"); play("ui_panel_close"); } }, 900);
   }
-  document.getElementById("buy").addEventListener("click", e => buy(15, e.currentTarget));
-  document.getElementById("buy2").addEventListener("click", e => buy(25, e.currentTarget));
+  document.getElementById("buy").addEventListener("click", e => buy(15, e.currentTarget, "decoHammock"));
+  document.getElementById("buy2").addEventListener("click", e => buy(25, e.currentTarget, "decoLantern"));
 
   const musicBtn = document.getElementById("musicBtn");
   musicBtn.addEventListener("click", async () => {
