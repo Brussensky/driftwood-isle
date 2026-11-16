@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Driftwood Isle Audio Demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* one visual world: a warm lagoon at golden hour. Layout: game phone on the left, sound sheet on the right */
+  --lagoon: #17606b;
+  --lagoon-deep: #0f4750;
+  --sand: #f4e4c1;
+  --foam: #fdf8ec;
+  --coral: #e2704f;
+  --palm: #4c8a4f;
+  --ink: #213236;
+  --muted: #5d6f70;
+  --line: #e3d3ad;
+  --display: "Fredoka", "Trebuchet MS", system-ui, sans-serif;
+  --body: "Nunito", "Segoe UI", system-ui, sans-serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--sand);
+  color: var(--ink);
+  font: 16px/1.5 var(--body);
+}
+header.top {
+  max-width: 1120px; margin: 0 auto; padding: 28px 20px 8px;
+  display: grid; gap: 6px;
+}
+header.top h1 {
+  font: 600 clamp(26px, 4vw, 36px)/1.1 var(--display); margin: 0; color: var(--lagoon-deep);
+  text-wrap: balance;
+}
+header.top p { margin: 0; max-width: 68ch; color: var(--muted); }
+header.top .by { font-weight: 700; color: var(--ink); }
+main {
+  max-width: 1120px; margin: 0 auto; padding: 16px 20px 48px;
+  display: grid; grid-template-columns: minmax(300px, 380px) 1fr; gap: 28px; align-items: start;
+}
+@media (max-width: 820px) { main { grid-template-columns: 1fr; } }
+
+/* ---------- phone / game ---------- */
+.phone {
+  background: linear-gradient(180deg, #8fd0cf 0%, #5fb3b3 38%, var(--lagoon) 100%);
+  border-radius: 34px; padding: 14px; border: 6px solid var(--ink);
+  box-shadow: 0 18px 40px rgba(15, 71, 80, .28);
+  display: grid; gap: 12px; position: relative; overflow: hidden;
+  user-select: none;
+}
+.hud { display: flex; gap: 8px; align-items: center; }
+.pill {
+  background: var(--foam); border-radius: 999px; padding: 4px 12px 4px 6px;
+  display: flex; align-items: center; gap: 6px; font: 600 15px var(--display);
+  font-variant-numeric: tabular-nums;
+}
+.pill .ico { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; color: #fff; }
+.coin { background: #e8b23a; box-shadow: inset 0 -2px 0 #c48d1d; }
+.lvl { background: var(--coral); }
+.xp { flex: 1; height: 12px; background: rgba(253,248,236,.5); border-radius: 99px; overflow: hidden; }
+.xp i { display: block; height: 100%; width: 0%; background: var(--foam); border-radius: 99px; transition: width .3s ease; }
+.board {
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px;
+  background: rgba(244, 228, 193, .9); padding: 8px; border-radius: 18px;
+  box-shadow: inset 0 3px 0 rgba(0,0,0,.06);
+}
+.cell {
+  aspect-ratio: 1; border-radius: 12px; background: #ead6a8; border: 0; padding: 0;
+  display: grid; place-items: center; cursor: pointer; position: relative;
+}
+.cell:focus-visible, button:focus-visible { outline: 3px solid var(--coral); outline-offset: 2px; }
+.cell svg { width: 80%; height: 80%; transition: transform .12s ease; }
+.cell.sel { background: #fff3cf; box-shadow: 0 0 0 3px var(--coral) inset; }
+.cell.sel svg { transform: translateY(-4px) scale(1.08); }
+.cell.pop svg { animation: pop .35s ease; }
+@keyframes pop { 0% { transform: scale(.4); } 70% { transform: scale(1.18); } 100% { transform: scale(1); } }
+.cell.shake { animation: shake .25s ease; }
+@keyframes shake { 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
+.bar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.gbtn {
+  font: 600 15px var(--display); border: 0; border-radius: 14px; padding: 10px 6px;
+  background: var(--foam); color: var(--ink); cursor: pointer;
+  box-shadow: 0 4px 0 rgba(15, 71, 80, .35);
+}
+.gbtn:active { transform: translateY(2px); box-shadow: 0 2px 0 rgba(15, 71, 80, .35); }
+.gbtn.primary { background: var(--coral); color: #fff; }
+.gbtn[aria-pressed="true"] { background: var(--palm); color: #fff; }
+.float {
+  position: absolute; font: 600 18px var(--display); color: #fff; pointer-events: none;
+  text-shadow: 0 2px 0 rgba(0,0,0,.25); animation: rise 1s ease forwards;
+}
+@keyframes rise { to { transform: translateY(-40px); opacity: 0; } }
+.sheet {
+  position: absolute; left: 14px; right: 14px; bottom: 14px; background: var(--foam);
+  border-radius: 20px; padding: 16px; display: grid; gap: 10px;
+  transform: translateY(110%); transition: transform .25s ease;
+  box-shadow: 0 -6px 20px rgba(0,0,0,.15);
+}
+.sheet.open { transform: none; }
+.sheet h3 { margin: 0; font: 600 18px var(--display); }
+.sheet .row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.banner {
+  position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none;
+  opacity: 0; transition: opacity .2s ease;
+}
+.banner.show { opacity: 1; }
+.banner span {
+  background: var(--coral); color: #fff; font: 600 28px var(--display); padding: 10px 24px;
+  border-radius: 18px; box-shadow: 0 8px 0 rgba(0,0,0,.18); transform: rotate(-3deg);
+}
+.start {
+  position: absolute; inset: 0; display: grid; place-items: center; background: rgba(15, 71, 80, .55);
+  border-radius: 28px;
+}
+.start button { font: 600 20px var(--display); padding: 14px 26px; }
+.start[hidden] { display: none; }
+.hint { color: var(--muted); font-size: 14px; margin: 10px 4px 0; }
+.hint b { color: var(--ink); }
+
+/* ---------- sound sheet ---------- */
+.notes { display: grid; gap: 18px; }
+.card {
+  background: var(--foam); border: 1px solid var(--line); border-radius: 16px; padding: 18px 20px;
+}
+.card h2 { font: 600 20px var(--display); margin: 0 0 8px; color: var(--lagoon-deep); }
+.card p { margin: 0 0 8px; max-width: 68ch; }
+.specs { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 0; padding: 0; list-style: none; }
+.specs li { background: var(--sand); border-radius: 999px; padding: 3px 12px; font-size: 14px; }
+table { width: 100%; border-collapse: collapse; font-size: 15px; }
+th { text-align: left; font: 600 13px var(--body); color: var(--muted); text-transform: uppercase; letter-spacing: .04em; padding: 6px 8px; border-bottom: 2px solid var(--line); }
+td { padding: 9px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+td.num { font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--muted); }
+td .file { display: block; font: 12px ui-monospace, Consolas, monospace; color: var(--muted); margin-top: 2px; }
+.plays { display: flex; gap: 6px; flex-wrap: wrap; }
+.play {
+  border: 1px solid var(--lagoon); background: transparent; color: var(--lagoon-deep);
+  border-radius: 999px; min-width: 34px; height: 30px; padding: 0 10px; cursor: pointer;
+  font: 700 13px var(--body);
+}
+.play:hover { background: var(--lagoon); color: #fff; }
+.tablewrap { overflow-x: auto; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <h1>Driftwood Isle: audio demo for a cozy merge game</h1>
+  <p><span class="by">Alexey Nagrani, sound designer.</span> A complete sound set for a cozy island merge game: UI and item sounds, merges that grow with tier, a combo ladder, rewards, a level-up stinger and a seamless music loop. Designed, produced and mixed in FL Studio. Play the game on the left to hear every sound in context, or audition the files on the right. Original concept for portfolio purposes, not affiliated with any studio.</p>
+</header>
+
+<main>
+  <section aria-label="Playable demo">
+    <div class="phone" id="phone">
+      <div class="hud">
+        <div class="pill"><span class="ico lvl" aria-hidden="true">★</span><span id="lvl">1</span></div>
+        <div class="xp" aria-label="Level progress"><i id="xp"></i></div>
+        <div class="pill"><span class="ico coin" aria-hidden="true">$</span><span id="coins">20</span></div>
+      </div>
+      <div class="board" id="board" role="grid" aria-label="Merge board"></div>
+      <div class="bar">
+        <button class="gbtn primary" id="spawn" type="button">Collect</button>
+        <button class="gbtn" id="shopBtn" type="button">Shop</button>
+        <button class="gbtn" id="musicBtn" type="button" aria-pressed="false">Music</button>
+      </div>
+
+      <div class="sheet" id="shop" role="dialog" aria-label="Shop">
+        <div class="row"><h3>Island shop</h3><button class="gbtn" id="closeShop" type="button">Close</button></div>
+        <div class="row"><span>Hammock between the palms</span><button class="gbtn primary" id="buy" type="button">Build · 15</button></div>
+        <div class="row"><span>Lantern on the pier</span><button class="gbtn primary" id="buy2" type="button">Build · 25</button></div>
+      </div>
+      <div class="banner" id="banner"><span>Level up!</span></div>
+      <div class="start" id="start"><button class="gbtn primary" id="startBtn" type="button">Tap to start with sound</button></div>
+    </div>
+    <p class="hint"><b>How to play:</b> tap an item to pick it up, tap a matching item to merge. Seed + seed = sprout, sprout + sprout = palm, palm + palm = coins. Tap an empty tile to move, tap <b>Collect</b> for new seeds, spend coins in the <b>Shop</b>.</p>
+  </section>
+
+  <section class="notes" aria-label="Sound design notes">
+    <div class="card">
+      <h2>Sonic identity</h2>
+      <p>Soft plucked strings, glassy tones and wooden knocks over a relaxed groove: a sound you can leave on for an hour. Every tonal sound sits in F major, mostly on the pentatonic notes F G A C D, so overlapping sounds always agree with each other and with the music.</p>
+      <p>Feedback grows with progress. Each merge tier adds notes, range and layers, and sits 2 LU louder than the one below: tier 3 runs over two octaves, adds a low body and air, and lands on a soft Fmaj7 before the coins pay out. Frequent sounds come in three variations, and the engine adds a random ±2% pitch on top, so taps and drops stay pleasant after thousands of plays.</p>
+      <p>Merges in a row build a combo. Each merge within 3 seconds of the last adds a step whose top note climbs C5, F5, A5, D6, F6, one LU louder each time, with a low C joining on the final step. Pause and the ladder resets. Every sound was also checked through a 300 Hz high-pass to make sure it still reads on a phone speaker.</p>
+      <ul class="specs">
+        <li>48 kHz / 24-bit masters</li>
+        <li>Key: F major pentatonic</li>
+        <li>Loop: 85 BPM, 4 bars, seamless</li>
+        <li>Loudness matched by momentary max</li>
+        <li>Music ducks −6 dB under the stinger</li>
+        <li>Combo ladder: 5 steps, 3 s window</li>
+        <li>Phone-speaker check: 300 Hz high-pass</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2>Sound list</h2>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Sound</th><th>Listen</th><th>Target</th></tr></thead>
+          <tbody id="list"></tbody>
+        </table>
+      </div>
+      <p class="hint">Target = max momentary loudness in LUFS; the loop is integrated loudness. WAV masters (48 kHz / 24-bit) available on request.</p>
+    </div>
+  </section>
+</main>
+
+<script>
+(() => {
+  // ---------- sound catalogue ----------
+  const LIST = [
+    { key: "ui_tap", name: "UI tap", desc: "Marimba tick with a wooden edge", files: 3, lufs: -26 },
+    { key: "ui_panel_open", name: "Panel open", desc: "Shop panel slides in", files: 0, lufs: -25 },
+    { key: "ui_panel_close", name: "Panel close", desc: "Shop panel slides out", files: 0, lufs: -25 },
+    { key: "ui_error_soft", name: "Not allowed", desc: "Low muted double knock; never harsh", files: 3, lufs: -26 },
+    { key: "item_pickup", name: "Item pick up", desc: "Item lifts off the board", files: 3, lufs: -26 },
+    { key: "item_drop", name: "Item drop", desc: "Item lands on a tile", files: 3, lufs: -26 },
+    { key: "merge_tier1", name: "Merge, tier 1", desc: "Seed + seed = sprout", files: 3, lufs: -23 },
+    { key: "merge_tier2", name: "Merge, tier 2", desc: "Sprout + sprout = palm", files: 3, lufs: -21 },
+    { key: "merge_tier3", name: "Merge, tier 3", desc: "Palm + palm: the biggest merge, coins follow", files: 3, lufs: -19 },
+    { key: "combo_step", name: "Combo ladder", desc: "Top note climbs C5 → F5 → A5 → D6 → F6, low C joins on the last step; one step up per merge in a row, each 1 LU louder", files: 5, lufs: "−26…−22" },
+    { key: "reward_coins", name: "Coins reward", desc: "Palm + palm pays out coins", files: 0, lufs: -21 },
+    { key: "build_place", name: "Build / place", desc: "A decoration is built on the island", files: 3, lufs: -21 },
+    { key: "level_up_stinger", name: "Level up stinger", desc: "Level complete, music ducks underneath", files: 2, lufs: -17 },
+    { key: "mus_board_loop", name: "Board loop", desc: "85 BPM, 4 bars, F – Dm – B♭ – C", files: 0, lufs: -26, loop: true },
+  ];
+  const fileOf = (k, i) => k === "mus_board_loop" ? "audio/mus_board_loop_85bpm.wav"
+    : `audio/sfx_${k}${i ? "_" + String(i).padStart(2, "0") : ""}.wav`;
+
+  let ctx, sfxBus, musBus;
+  const buffers = {};
+  let loaded = false;
+
+  function initAudio() {
+    if (ctx) return;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    ctx = new AC();
+    sfxBus = ctx.createGain(); sfxBus.gain.value = 1; sfxBus.connect(ctx.destination);
+    musBus = ctx.createGain(); musBus.gain.value = 0.9; musBus.connect(ctx.destination);
+    const jobs = [];
+    for (const s of LIST) {
+      const n = s.files || 1;
+      for (let i = 1; i <= n; i++) {
+        const url = fileOf(s.key, s.files ? i : 0);
+        jobs.push(fetch(url).then(r => r.arrayBuffer())
+          .then(b => new Promise((res, rej) => ctx.decodeAudioData(b, res, rej)))
+          .then(buf => { (buffers[s.key] ||= [])[i - 1] = buf; })
+          .catch(() => {}));
+      }
+    }
+    return Promise.all(jobs).then(() => { loaded = true; });
+  }
+
+  const lastVar = {};
+  function play(key, { variant = null, rate = null, gain = 1 } = {}) {
+    if (!ctx || !buffers[key]) return;
+    const vars = buffers[key];
+    let i = variant;
+    if (i === null) {
+      do { i = Math.floor(Math.random() * vars.length); } while (vars.length > 1 && i === lastVar[key]);
+    }
+    lastVar[key] = i;
+    const src = ctx.createBufferSource();
+    src.buffer = vars[i];
+    src.playbackRate.value = rate ?? (vars.length > 1 ? 1 + (Math.random() * 0.04 - 0.02) : 1);
+    const g = ctx.createGain(); g.gain.value = gain;
+    src.connect(g).connect(sfxBus);
+    src.start();
+    return src;
+  }
+
+  let musicSrc = null;
+  function setMusic(on) {
+    if (!ctx || !buffers.mus_board_loop) return;
+    if (on && !musicSrc) {
+      musicSrc = ctx.createBufferSource();
+      musicSrc.buffer = buffers.mus_board_loop[0];
+      musicSrc.loop = true;
+      const fade = ctx.createGain();
+      fade.gain.setValueAtTime(0, ctx.currentTime);
+      fade.gain.linearRampToValueAtTime(1, ctx.currentTime + 1.2);
+      musicSrc.connect(fade).connect(musBus);
+      musicSrc._fade = fade;
+      musicSrc.start();
+    } else if (!on && musicSrc) {
+      const s = musicSrc; musicSrc = null;
+      s._fade.gain.cancelScheduledValues(ctx.currentTime);
+      s._fade.gain.setValueAtTime(s._fade.gain.value, ctx.currentTime);
+      s._fade.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.6);
+      s.stop(ctx.currentTime + 0.65);
+    }
+  }
+  function duck(seconds) {
+    if (!ctx) return;
+    const g = musBus.gain, t = ctx.currentTime;
+    g.cancelScheduledValues(t);
+    g.setValueAtTime(g.value, t);
+    g.linearRampToValueAtTime(0.45, t + 0.08);
+    g.setValueAtTime(0.45, t + seconds);
+    g.linearRampToValueAtTime(0.9, t + seconds + 0.8);
+  }
+
+  // ---------- sound list ----------
+  const tbody = document.getElementById("list");
+  let listMusic = null;
+  for (const s of LIST) {
+    const tr = document.createElement("tr");
+    const n = s.files || 1;
+    const btns = [];
+    for (let i = 0; i < n; i++) {
+      const b = document.createElement("button");
+      b.className = "play"; b.type = "button";
+      b.textContent = s.loop ? "Play / stop" : (n > 1 ? `▶ ${i + 1}` : "▶ Play");
+      b.setAttribute("aria-label", `Play ${s.name}${n > 1 ? " variation " + (i + 1) : ""}`);
+      b.addEventListener("click", async () => {
+        await unlock();
+        if (s.loop) {
+          if (listMusic) { listMusic.stop(); listMusic = null; return; }
+          if (musicSrc) setMusic(false), musicBtn.setAttribute("aria-pressed", "false");
+          listMusic = ctx.createBufferSource(); listMusic.buffer = buffers.mus_board_loop[0];
+          listMusic.loop = true; listMusic.connect(musBus); listMusic.start();
+        } else {
+          play(s.key, { variant: i, rate: 1 });
+        }
+      });
+      btns.push(b);
+    }
+    const fname = s.files ? fileOf(s.key, 1).replace("audio/", "").replace("_01.wav", `_01…${String(s.files).padStart(2, "0")}.wav`) : fileOf(s.key, 0).replace("audio/", "");
+    tr.innerHTML = `<td><strong>${s.name}</strong> <span>${s.desc}</span><span class="file">${fname}</span></td><td><div class="plays"></div></td><td class="num">${s.lufs} LUFS</td>`;
+    btns.forEach(b => tr.querySelector(".plays").appendChild(b));
+    tbody.appendChild(tr);
+  }
+
+  // ---------- game ----------
+  const W = 5, H = 5;
+  const grid = Array(W * H).fill(0);
+  [0, 1, 1, 2, 0, 1, 0, 0, 2, 1, 0, 1, 0, 0, 0, 2, 0, 1, 0, 0, 0, 0, 1, 0, 0].forEach((v, i) => grid[i] = v);
+  let sel = -1, coins = 20, xp = 0, lvl = 1;
+  const XP_NEED = 6;
+  const board = document.getElementById("board");
+  const phone = document.getElementById("phone");
+
+  const ICONS = {
+    1: `<svg viewBox="0 0 40 40" aria-hidden="true"><ellipse cx="20" cy="24" rx="9" ry="11" fill="#9a6a3a"/><ellipse cx="17" cy="20" rx="3" ry="4" fill="#c49463"/></svg>`,
+    2: `<svg viewBox="0 0 40 40" aria-hidden="true"><path d="M20 36 V18" stroke="#5a7d34" stroke-width="3" stroke-linecap="round"/><path d="M20 20 C10 18 8 10 10 7 C16 8 20 13 20 20Z" fill="#6fae4c"/><path d="M20 22 C30 20 32 12 30 9 C24 10 20 15 20 22Z" fill="#4c8a4f"/><ellipse cx="20" cy="36" rx="8" ry="2.5" fill="#b08a55"/></svg>`,
+    3: `<svg viewBox="0 0 40 40" aria-hidden="true"><path d="M21 37 C20 28 19 20 21 12" stroke="#8a5a2b" stroke-width="3.5" fill="none" stroke-linecap="round"/><path d="M21 12 C14 6 6 8 3 13 C10 11 15 12 21 13Z" fill="#4c8a4f"/><path d="M21 12 C28 6 36 8 38 14 C31 11 26 12 21 13Z" fill="#3f7d4e"/><path d="M21 12 C17 4 11 2 8 4 C14 6 18 9 21 12Z" fill="#6fae4c"/><path d="M21 12 C26 4 32 3 34 6 C28 7 24 9 21 12Z" fill="#5c9c4a"/><circle cx="19" cy="14" r="2" fill="#7a4b22"/><circle cx="23" cy="14.5" r="2" fill="#7a4b22"/></svg>`,
+  };
+  const NAMES = { 0: "empty tile", 1: "seed", 2: "sprout", 3: "palm" };
+
+  function render(popAt = -1) {
+    board.innerHTML = "";
+    grid.forEach((v, i) => {
+      const c = document.createElement("button");
+      c.type = "button"; c.className = "cell" + (i === sel ? " sel" : "") + (i === popAt ? " pop" : "");
+      c.setAttribute("aria-label", NAMES[v] + (i === sel ? ", picked up" : ""));
+      c.innerHTML = v ? ICONS[v] : "";
+      c.addEventListener("click", () => tapCell(i, c));
+      board.appendChild(c);
+    });
+    document.getElementById("coins").textContent = coins;
+    document.getElementById("lvl").textContent = lvl;
+    document.getElementById("xp").style.width = Math.min(100, xp / XP_NEED * 100) + "%";
+  }
+
+  function floatText(el, text) {
+    const r = el.getBoundingClientRect(), p = phone.getBoundingClientRect();
+    const f = document.createElement("div");
+    f.className = "float"; f.textContent = text;
+    f.style.left = (r.left - p.left + r.width / 2 - 16) + "px";
+    f.style.top = (r.top - p.top) + "px";
+    phone.appendChild(f); setTimeout(() => f.remove(), 1000);
+  }
+
+  function gainXp(n) {
+    xp += n;
+    if (xp >= XP_NEED) {
+      xp = 0; lvl++;
+      setTimeout(() => {
+        play("level_up_stinger"); duck(3.0);
+        const b = document.getElementById("banner");
+        b.classList.add("show"); setTimeout(() => b.classList.remove("show"), 1600);
+        render();
+      }, 350);
+    }
+  }
+
+  // combo: merges less than 3 s apart climb the pentatonic ladder
+  let combo = 0, lastMerge = 0;
+  function comboStep(i) {
+    const now = performance.now();
+    combo = now - lastMerge < 3000 ? combo + 1 : 0;
+    lastMerge = now;
+    if (combo > 0) {
+      const step = Math.min(combo, 5) - 1;
+      setTimeout(() => play("combo_step", { variant: step, rate: 1 }), 120);
+      floatText(board.children[i], "Combo ×" + (combo + 1));
+    }
+  }
+
+  function tapCell(i, el) {
+    unlock();
+    const v = grid[i];
+    if (sel === -1) {
+      if (!v) { play("ui_tap"); return; }
+      sel = i; play("item_pickup"); render(); return;
+    }
+    if (i === sel) { sel = -1; play("item_drop"); render(); return; }
+    const sv = grid[sel];
+    if (!v) { grid[i] = sv; grid[sel] = 0; sel = -1; play("item_drop"); render(); return; }
+    if (v === sv) {
+      grid[sel] = 0; sel = -1;
+      if (v < 3) {
+        grid[i] = v + 1; play("merge_tier" + v); render(i); comboStep(i); gainXp(v);
+      } else {
+        grid[i] = 0; play("merge_tier3"); render(i); comboStep(i);
+        setTimeout(() => { play("reward_coins"); coins += 10; render(); floatText(board.children[i], "+10"); }, 260);
+        gainXp(3);
+      }
+      return;
+    }
+    play("ui_error_soft");
+    el.classList.remove("shake"); void el.offsetWidth; el.classList.add("shake");
+  }
+
+  document.getElementById("spawn").addEventListener("click", () => {
+    unlock();
+    const empty = grid.map((v, i) => v ? -1 : i).filter(i => i >= 0);
+    if (!empty.length) { play("ui_error_soft"); return; }
+    const i = empty[Math.floor(Math.random() * empty.length)];
+    grid[i] = 1; play("ui_tap"); setTimeout(() => play("item_drop"), 90); render(i);
+  });
+
+  const shop = document.getElementById("shop");
+  document.getElementById("shopBtn").addEventListener("click", () => { unlock(); shop.classList.add("open"); play("ui_panel_open"); });
+  document.getElementById("closeShop").addEventListener("click", () => { shop.classList.remove("open"); play("ui_panel_close"); });
+  function buy(cost, btn) {
+    if (coins < cost) { play("ui_error_soft"); return; }
+    coins -= cost; play("build_place"); render(); floatText(btn, "Built!"); gainXp(2);
+  }
+  document.getElementById("buy").addEventListener("click", e => buy(15, e.currentTarget));
+  document.getElementById("buy2").addEventListener("click", e => buy(25, e.currentTarget));
+
+  const musicBtn = document.getElementById("musicBtn");
+  musicBtn.addEventListener("click", async () => {
+    await unlock();
+    if (listMusic) { listMusic.stop(); listMusic = null; }
+    const on = musicBtn.getAttribute("aria-pressed") !== "true";
+    musicBtn.setAttribute("aria-pressed", String(on));
+    play("ui_tap");
+    setMusic(on);
+  });
+
+  let loading = null;
+  async function unlock() {
+    if (!ctx) loading = initAudio();
+    try { if (ctx.state !== "running") await ctx.resume(); } catch (e) {}
+    if (loading) await loading;
+    document.getElementById("start").hidden = true;
+  }
+  document.getElementById("startBtn").addEventListener("click", async () => {
+    await unlock();
+    musicBtn.setAttribute("aria-pressed", "true");
+    setMusic(true);
+    play("ui_panel_open");
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
